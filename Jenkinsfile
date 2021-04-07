@@ -15,7 +15,7 @@ pipeline {
         DEVOPS_METRICS_ENABLED = 'false'
 
         // Email to -- TO DO - Required to add DL
-        EMAIL_TO = "RQNS_FTM_DevOps_DL@ds.uhc.com"
+        EMAIL_TO = "karki_pankaj@optum.com"
         DEPLOYMENT_APPROVERS = ""
 
         //CREDENTIALS
@@ -26,12 +26,12 @@ pipeline {
         //Docker
         DTR_CREDENTIALS_ID = 'ftm-service-account'
         DTR_ORG = "rqnsftm"
-        DTR_IMG_REPO = "ftm-announcement"
+        DTR_IMG_REPO = "demo-pkarki10"
         DTR_HOST = 'docker.repo1.uhc.com'
         DTR_PATH = "${DTR_HOST}/${DTR_ORG}/${DTR_IMG_REPO}"
 
         //Common Setting for All Environments
-        OSE_APP = "ftm-announcement"
+        OSE_APP = "demo-pkarki10"
 
         //Open Shift Origin - Dev
         OSO_CORE_CTC_URL = "https://origin-ctc-core-nonprod.optum.com"
@@ -77,11 +77,12 @@ pipeline {
                             echo "build.git.branch=$GIT_BRANCH" >> version.properties
                         '''
                 glMavenBuild additionalProps: ['ci.env': '']
-                glSonarMavenScan productName: "RQNS_FTM_Field_Tool_Modernization", gitUserCredentialsId: "${env.GITHUB_SONAR_ID}"
+             //   glSonarMavenScan productName: "RQNS_FTM_Field_Tool_Modernization", gitUserCredentialsId: "${env.GITHUB_SONAR_ID}"
                 stash includes: 'target/*.jar', name: 'web-package'
             }
         }
 
+        /*
         stage('Deploy App to Dev') {
             when { expression { env.BRANCH_NAME == 'master' } }
             agent { label 'docker-maven-slave' }
@@ -100,6 +101,27 @@ pipeline {
             }
         }
 
+        */
+
+        stage('Deploy App to UAT') {
+            when { expression { env.BRANCH_NAME == 'master' } }
+            agent { label 'docker-maven-slave' }
+            steps {
+                unstash 'web-package'
+                withEnv(['ENVTYPE=uat']) {
+
+                    script {
+                        createDockerBuildArgs("${ENVTYPE}")
+                    }
+                    dockerImageBuildPush()
+
+                }
+                dockerTagPushImageLocal("dev")
+                openshiftDeployImageLocal("dev", "${OSO_CORE_CTC_URL}", "${OSO_PROJECT_UAT}")
+            }
+        }
+
+        /*
         stage('Test deployment Approval') {
             steps {
                 emailext body: "Approval URL: ${BUILD_URL}input/",
@@ -278,7 +300,7 @@ pipeline {
                 openshiftDeployImageLocal("prod", "${OSO_DMZ_ELR_URL_PROD}", "${OSO_PROJECT_PROD}")
             }
         }
-
+        */
     }
 
     post {

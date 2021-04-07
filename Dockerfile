@@ -10,7 +10,7 @@ EXPOSE 8081
 #Requires for splunk data
 RUN mkdir -p /logs
 RUN chmod -R 777 /logs
-COPY target/prospective-ftm*.jar /opt/optum/web.jar
+COPY target/demo-0.0.1-SNAPSHOT.jar /opt/optum/web.jar
 COPY jmx-config.yaml /opt/optum/jmx-config.yaml
 
 RUN apk add --no-cache curl
